@@ -4,9 +4,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:instayum/widget/pickers/user_image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
-class AuthFrom extends StatefulWidget {
-  AuthFrom(
+class AuthForm extends StatefulWidget {
+  AuthForm(
     this.submitFn,
     this.isLoeading,
   );
@@ -25,10 +28,10 @@ class AuthFrom extends StatefulWidget {
   _AuthFormState createState() => _AuthFormState();
 }
 
-class _AuthFormState extends State<AuthFrom> {
+class _AuthFormState extends State<AuthForm> {
   final _formKey = GlobalKey<FormState>();
 
-  var _isSignUp = true;
+  bool _isSignUp = true;
 
   var _userEmail = "";
   var _userName = "";
@@ -39,29 +42,48 @@ class _AuthFormState extends State<AuthFrom> {
     _userImageFile = image;
   }
 
-  void _trySubmt() {
-    final isValid = _formKey.currentState.validate();
-    FocusScope.of(context).unfocus();
+  Future<bool> usernameCheck(String username) async {
+    final result = await FirebaseFirestore.instance
+        .collection('users')
+        .where('username', isEqualTo: username)
+        .get();
 
-    if (_userImageFile == null && _isSignUp) {
+    return result.docs.isEmpty;
+  }
+
+  void _trySubmit() async {
+    final valid = await usernameCheck(_userName);
+    if (!valid) {
       Scaffold.of(context).showSnackBar(
         SnackBar(
-          content: Text("Please pick an image"),
+          content: Text("The username is already exist"),
           backgroundColor: Theme.of(context).errorColor,
         ),
       );
-      return;
-    }
-    if (isValid) {
-      _formKey.currentState.save();
-      widget.submitFn(
-        _userEmail.trim(), // trim here to delete any extar space at the end
-        _userName.trim(),
-        _userPassword.trim(),
-        _userImageFile,
-        _isSignUp,
-        context,
-      );
+    } else {
+      final isValid = _formKey.currentState.validate();
+      FocusScope.of(context).unfocus();
+
+      if (_userImageFile == null && _isSignUp) {
+        Scaffold.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Please pick an image"),
+            backgroundColor: Theme.of(context).errorColor,
+          ),
+        );
+        return;
+      }
+      if (isValid) {
+        _formKey.currentState.save();
+        widget.submitFn(
+          _userEmail.trim(), // trim here to delete any extar space at the end
+          _userName.trim(),
+          _userPassword.trim(),
+          _userImageFile,
+          _isSignUp,
+          context,
+        );
+      }
     }
   }
 
@@ -107,7 +129,7 @@ class _AuthFormState extends State<AuthFrom> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
-                      _isSignUp ? "SignUp" : "Login",
+                      _isSignUp ? "Sign Up" : "Login",
                       style: TextStyle(
                           fontSize: 25,
                           fontWeight: FontWeight.w500,
@@ -118,7 +140,9 @@ class _AuthFormState extends State<AuthFrom> {
                       key: ValueKey(
                           "email"), // علشان اذا حولت من لوق ان الى ساين اب ما يتحول الوزرنيم الى باسوورد
                       validator: (value) {
-                        if (value.isEmpty || !isValidEmail(value)) {
+                        if (value.isEmpty) {
+                          return "Email should not be empty";
+                        } else if (!isValidEmail(value)) {
                           return "Please enter a valid email";
                         }
                         return null;
@@ -133,8 +157,9 @@ class _AuthFormState extends State<AuthFrom> {
                       TextFormField(
                         key: ValueKey("username"),
                         validator: (value) {
-                          if (value.isEmpty ||
-                              !isValiedUsername(value) ||
+                          if (value.isEmpty) {
+                            return "username should not be empty";
+                          } else if (!isValiedUsername(value) ||
                               value.length < 4) {
                             return "The username must contain at least 4 characters";
                           }
@@ -148,8 +173,10 @@ class _AuthFormState extends State<AuthFrom> {
                     TextFormField(
                       key: ValueKey("password"),
                       validator: (value) {
-                        if (value.isEmpty || !isValiedPassword(value)) {
-                          return "The password must conatint at least \none upper case \none lower case \none digit \n \nand at least 8 characters in length";
+                        if (value.isEmpty) {
+                          return "password should not be empty";
+                        } else if (!isValiedPassword(value)) {
+                          return "The password must conatint at least \none upper case \none lower case \none digit \none special character \nand at least 8 characters in length";
                         }
                         return null;
                       },
@@ -165,8 +192,8 @@ class _AuthFormState extends State<AuthFrom> {
                     if (widget.isLoeading) CircularProgressIndicator(),
                     if (!widget.isLoeading)
                       RaisedButton(
-                        child: Text(_isSignUp ? "SignUp" : "Login"),
-                        onPressed: _trySubmt,
+                        child: Text(_isSignUp ? "Sign Up" : "Login"),
+                        onPressed: _trySubmit,
                       ),
                     if (!widget.isLoeading)
                       FlatButton(

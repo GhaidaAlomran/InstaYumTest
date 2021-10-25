@@ -15,9 +15,9 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final _auth = FirebaseAuth.instance;
-  bool isLoading = false;
+  bool _isLoading = false;
 
-  void _submitAouthForm(
+  void _submitAuthForm(
     String email,
     String username,
     String password,
@@ -29,7 +29,7 @@ class _AuthScreenState extends State<AuthScreen> {
     UserCredential authResult;
     try {
       setState(() {
-        isLoading = true;
+        _isLoading = true;
       });
       if (isSignUp) {
         authResult = await _auth.createUserWithEmailAndPassword(
@@ -41,8 +41,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 "jpg"); //we put the user is + jpg to be the name of the image and to make it unqie we use user id
 
         // we add onComplete to can add await
-        await ref.putFile(
-            image); // i delete .onComplete but maybe this is not the solution
+        await ref.putFile(image);
 
         final url = await ref.getDownloadURL();
 
@@ -64,32 +63,39 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } on PlatformException catch (err) {
       setState(() {
-        isLoading = false;
+        _isLoading = false;
       });
       //to handel the error of firebase in case of entring non-valid email or password
       var message = "Threr is an error, please check your credentials!";
 
       if (err.message != null) {
-        message = err.message;
+        message = err.message.toString();
+        message = "gggfb ";
       }
-      Scaffold.of(ctx).showSnackBar(
+      ScaffoldMessenger.of(ctx).showSnackBar(
         SnackBar(
             content: Text(message), backgroundColor: Theme.of(ctx).errorColor),
       );
     } catch (err) {
       setState(() {
-        isLoading = false;
+        _isLoading = false;
       });
       // to catch any other kind of errors
       print(err);
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        SnackBar(
+            content:
+                Text("The username or password is invalid, please try again!"),
+            backgroundColor: Theme.of(ctx).errorColor),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor: Colors.orange, //Theme.of(context).backgroundColor,
-      body: AuthFrom(_submitAouthForm, isLoading),
+      // backgroundColor: Colors.green, //Theme.of(context).backgroundColor,
+      body: AuthForm(_submitAuthForm, _isLoading),
     );
   }
 }
