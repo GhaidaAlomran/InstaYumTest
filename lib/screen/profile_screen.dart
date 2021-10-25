@@ -3,35 +3,90 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatefulWidget {
-//  ProfileScreen(this.userId);
-
-  // final String userId;
-
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-//   final FirebaseAuth auth =  FirebaseAuth.instance;
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  String userUsername = "";
+  String imageURL = "";
 
-// void getdata(){
+  void _getData() async {
+    User user = _firebaseAuth.currentUser;
+    FirebaseFirestore.instance
+        .collection("users")
+        .doc(user.uid)
+        .snapshots()
+        .listen((userData) {
+      setState(() {
+        userUsername = userData.data()['username'];
+        imageURL = userData.data()['image_url'];
+      });
+    });
+  }
 
-// }
-//   void inputData() async{
-// final FirebaseUser user = await auth.currentUser();
-// final uid = user.uid;
-// final imageUrl = Firestore.instance.collection("users").snapshots();
+  void initState() {
+    super.initState();
+    _getData();
+  }
 
-// listen((userData){
-//   setState(() {
-//     username = userData.data()['uid'];
+  //shape: RoundedRectangleBorder(
+  // borderRadius: BorderRadius.circular(20),
 
-//   });
-
-// }}
-
-  //final User user = auth.currentUser();
-  //final userData = Firestore.instance.collection("users").document(authResult.user.uid);
+  showAlertDialog(BuildContext context) {
+    // set up the buttons
+    Widget noButton = RaisedButton(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: Theme.of(context).accentColor, width: 2),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        "No",
+        style: TextStyle(
+          color: Theme.of(context).accentColor,
+        ),
+      ),
+      onPressed: () {
+        Navigator.of(context).pop();
+      },
+    );
+    Widget yesButton = RaisedButton(
+      child: Text(
+        "Yes",
+      ),
+      onPressed: () {
+        FirebaseAuth.instance.signOut();
+        Navigator.of(context).pop();
+      },
+    );
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      //backgroundColor: Theme.of(context).backgroundColor,
+      title: Center(
+          child: Text(
+        "Logout",
+        style: TextStyle(
+            fontWeight: FontWeight.bold, color: Theme.of(context).accentColor),
+      )),
+      content: Text(
+        "Are you sure you want to logout of the account? ",
+        style: TextStyle(color: Theme.of(context).accentColor),
+      ),
+      actions: [
+        noButton,
+        yesButton,
+      ],
+    );
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,17 +116,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
             onChanged: (itemIdentifier) {
               if (itemIdentifier == "logout") {
-                FirebaseAuth.instance.signOut();
+                showAlertDialog(context);
               }
             },
           )
         ],
       ),
-      // body: Column(children: [
-      //  FutureBuilder(
-      //    future: Provider.of(context).auth
-      //    ,builder: builder)
-      // ],),
+      body: Center(
+        child: Padding(
+          padding: EdgeInsets.all(10),
+          child: Column(
+            children: [
+              CircleAvatar(
+                backgroundImage: NetworkImage(
+                  imageURL,
+                ),
+              ),
+              Text("username: " + userUsername),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

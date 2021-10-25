@@ -136,7 +136,7 @@ class _AuthFormState extends State<AuthFrom> {
                           if (value.isEmpty ||
                               !isValiedUsername(value) ||
                               value.length < 4) {
-                            return "The username must be  3 characters";
+                            return "The username must contain at least 4 characters";
                           }
                           return null;
                         },
@@ -149,7 +149,7 @@ class _AuthFormState extends State<AuthFrom> {
                       key: ValueKey("password"),
                       validator: (value) {
                         if (value.isEmpty || !isValiedPassword(value)) {
-                          return "The password must conatint at least \none upper case \none lower case \none digit \nand at least 8 characters in length";
+                          return "The password must conatint at least \none upper case \none lower case \none digit \n \nand at least 8 characters in length";
                         }
                         return null;
                       },

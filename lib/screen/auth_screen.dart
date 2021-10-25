@@ -12,7 +12,6 @@ class AuthScreen extends StatefulWidget {
   @override
   _AuthScreenState createState() => _AuthScreenState();
 }
-//gg
 
 class _AuthScreenState extends State<AuthScreen> {
   final _auth = FirebaseAuth.instance;
@@ -27,7 +26,7 @@ class _AuthScreenState extends State<AuthScreen> {
     BuildContext ctx,
     // we recevice the context of form Scafflod to have the ability to push the snakcbar messages and to use theme color.
   ) async {
-    AuthResult authResult;
+    UserCredential authResult;
     try {
       setState(() {
         isLoading = true;
@@ -42,14 +41,16 @@ class _AuthScreenState extends State<AuthScreen> {
                 "jpg"); //we put the user is + jpg to be the name of the image and to make it unqie we use user id
 
         // we add onComplete to can add await
-        await ref.putFile(image).onComplete;
+        await ref.putFile(
+            image); // i delete .onComplete but maybe this is not the solution
 
         final url = await ref.getDownloadURL();
 
-        await Firestore.instance //just to store the username in the database
+        await FirebaseFirestore
+            .instance //just to store the username in the database
             .collection("users")
-            .document(authResult.user.uid)
-            .setData({
+            .doc(authResult.user.uid)
+            .set({
           "username": username,
           "email": email,
           "image_url": url,
